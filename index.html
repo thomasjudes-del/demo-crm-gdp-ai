@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Démo CRM/GDP augmenté par IA</title>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --panel: #ffffff;
+      --ink: #15202b;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --accent: #4f46e5;
+      --accent-soft: #eef2ff;
+      --green: #0f766e;
+      --green-soft: #ccfbf1;
+      --orange: #b45309;
+      --orange-soft: #ffedd5;
+      --red: #b91c1c;
+      --red-soft: #fee2e2;
+      --shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+      --radius: 22px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top left, #eef2ff 0, transparent 32%), var(--bg);
+      color: var(--ink);
+    }
+
+    .app {
+      min-height: 100vh;
+      padding: 22px;
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      gap: 20px;
+    }
+
+    .panel {
+      background: rgba(255,255,255,0.88);
+      border: 1px solid rgba(229,231,235,0.9);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .left {
+      display: flex;
+      flex-direction: column;
+      min-height: calc(100vh - 44px);
+    }
+
+    .header {
+      padding: 22px 22px 18px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(135deg, #ffffff, #f8fafc);
+    }
+
+    .eyebrow {
+      color: var(--accent);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      font-size: 22px;
+      line-height: 1.15;
+      margin: 0 0 8px;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      line-height: 1.45;
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .mode-switch {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding: 14px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfdff;
+    }
+
+    .mode {
+      border: 1px solid var(--line);
+      background: white;
+      border-radius: 999px;
+      padding: 10px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .mode.active {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-color: #c7d2fe;
+    }
+
+    .chat {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .message {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      font-weight: 800;
+      flex: 0 0 32px;
+    }
+
+    .user .avatar { background: #dbeafe; color: #1d4ed8; }
+    .ai .avatar { background: #ede9fe; color: #6d28d9; }
+
+    .bubble {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 12px 13px;
+      background: white;
+      font-size: 13px;
+      line-height: 1.45;
+      max-width: 100%;
+    }
+
+    .user .bubble { background: #f8fafc; }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: 10px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .tag.green { background: var(--green-soft); color: var(--green); }
+    .tag.orange { background: var(--orange-soft); color: var(--orange); }
+    .tag.red { background: var(--red-soft); color: var(--red); }
+
+    .card {
+      margin-top: 10px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .card-title {
+      padding: 10px 12px;
+      background: #f8fafc;
+      font-weight: 800;
+      font-size: 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .rows { padding: 8px 12px 10px; }
+    .row {
+      display: grid;
+      grid-template-columns: 96px 1fr;
+      gap: 10px;
+      padding: 7px 0;
+      font-size: 12px;
+      border-bottom: 1px dashed #e5e7eb;
+    }
+    .row:last-child { border-bottom: 0; }
+    .row .label { color: var(--muted); font-weight: 700; }
+    .row .value { color: var(--ink); }
+
+    .confirm {
+      padding: 14px 18px;
+      border-top: 1px solid var(--line);
+      background: #fbfdff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .confirm-text {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .button {
+      border: 0;
+      background: var(--accent);
+      color: white;
+      padding: 11px 15px;
+      border-radius: 12px;
+      font-weight: 800;
+      font-size: 13px;
+      white-space: nowrap;
+      box-shadow: 0 10px 22px rgba(79,70,229,.22);
+    }
+
+    .right {
+      min-height: calc(100vh - 44px);
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .dashboard-top {
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      background: linear-gradient(135deg, #ffffff, #f8fafc);
+    }
+
+    .dashboard-title h2 {
+      margin: 0 0 5px;
+      font-size: 20px;
+    }
+
+    .dashboard-title p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(110px, 1fr));
+      gap: 10px;
+      width: min(620px, 55%);
+    }
+
+    .kpi {
+      border: 1px solid var(--line);
+      background: white;
+      border-radius: 16px;
+      padding: 11px 12px;
+    }
+
+    .kpi .num {
+      font-size: 22px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .kpi .name {
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 5px;
+      font-weight: 700;
+    }
+
+    .dashboard-body {
+      padding: 16px;
+      min-height: 0;
+      display: grid;
+    }
+
+    .static-dashboard {
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #fff;
+    }
+
+    .metabase-shell {
+      min-width: 980px;
+      background: #fff;
+      color: #0f1f2f;
+      font-family: Arial, Helvetica, sans-serif;
+      padding-bottom: 20px;
+    }
+
+    .metabase-header {
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      border-bottom: 1px solid #d9dee3;
+    }
+
+    .metabase-header h3 {
+      margin: 0;
+      font-size: 19px;
+      font-weight: 800;
+    }
+
+    .metabase-title {
+      font-size: 20px;
+      font-weight: 800;
+      padding: 22px 28px 16px;
+    }
+
+    .chart-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      padding: 0 20px 8px;
+    }
+
+    .mb-card {
+      border: 1px solid #d7dce0;
+      border-radius: 5px;
+      background: #fff;
+      padding: 8px 12px 12px;
+      position: relative;
+    }
+
+    .mb-card:after {
+      content: '•••';
+      position: absolute;
+      top: 10px;
+      right: 14px;
+      color: #9aa4ad;
+      font-size: 12px;
+      letter-spacing: 2px;
+    }
+
+    .mb-card.full { margin: 8px 20px; }
+
+    .mb-card-title {
+      font-size: 14px;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    .bar-chart {
+      height: 250px;
+      display: flex;
+      align-items: flex-end;
+      gap: 50px;
+      padding: 20px 34px 34px 60px;
+      border-left: 0;
+      background: repeating-linear-gradient(to top, transparent 0, transparent 49px, #edf0f2 50px);
+      position: relative;
+    }
+
+    .axis-label.y {
+      position: absolute;
+      left: 6px;
+      top: 105px;
+      transform: rotate(-90deg);
+      font-size: 12px;
+    }
+
+    .bar-wrap {
+      flex: 1;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 8px;
+      min-width: 90px;
+    }
+
+    .vbar {
+      width: 90%;
+      background: #e68687;
+    }
+
+    .bar-wrap span { font-size: 12px; }
+
+    .owner-chart {
+      height: 250px;
+      display: flex;
+      align-items: flex-end;
+      gap: 12px;
+      padding: 16px 22px 36px 50px;
+      background: repeating-linear-gradient(to top, transparent 0, transparent 49px, #edf0f2 50px);
+    }
+
+    .owner-bar {
+      height: 100%;
+      min-width: 44px;
+      flex: 1;
+      display: flex;
+      flex-direction: column-reverse;
+      align-items: center;
+      position: relative;
+    }
+
+    .owner-bar div {
+      width: 28px;
+      height: 190px;
+      display: flex;
+      align-items: flex-end;
+    }
+
+    .owner-bar b {
+      width: 100%;
+      display: block;
+      background: #e68687;
+    }
+
+    .owner-bar span {
+      position: absolute;
+      bottom: -34px;
+      transform: rotate(-45deg);
+      transform-origin: left center;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .owner-bar em {
+      position: absolute;
+      top: -12px;
+      font-style: normal;
+      font-size: 0;
+    }
+
+    .mb-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .mb-table th {
+      text-align: left;
+      color: #4b9cf5;
+      font-weight: 800;
+      background: #f1f7fe;
+      border-radius: 4px;
+      display: inline-block;
+      padding: 5px 8px;
+      margin: 2px 10px 2px 0;
+    }
+
+    .mb-table thead tr,
+    .mb-table tbody tr {
+      display: grid;
+      border-bottom: 1px solid #eef0f2;
+      align-items: center;
+    }
+
+    .mb-table td {
+      padding: 10px 8px 10px 0;
+      font-weight: 600;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .mb-table thead tr { border-bottom: 0; }
+    .mb-table:not(.opps):not(.projects) thead tr,
+    .mb-table:not(.opps):not(.projects) tbody tr { grid-template-columns: 190px 360px 180px 190px 90px 470px 160px; }
+    .mb-table.opps thead tr,
+    .mb-table.opps tbody tr { grid-template-columns: 360px 270px 130px 100px 90px 520px 160px; }
+    .mb-table.projects thead tr,
+    .mb-table.projects tbody tr { grid-template-columns: 330px 260px 260px 360px 260px; }
+
+    .table-footer {
+      text-align: right;
+      font-weight: 800;
+      padding-top: 8px;
+      font-size: 12px;
+    }
+
+    .audio-line {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: #f8fafc;
+      border: 1px dashed #cbd5e1;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .pulse {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #ef4444;
+      box-shadow: 0 0 0 6px rgba(239,68,68,.12);
+    }
+
+    @media (max-width: 1060px) {
+      .app { grid-template-columns: 1fr; }
+      .kpis { width: 100%; grid-template-columns: repeat(2, 1fr); }
+      .dashboard-top { align-items: flex-start; flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="panel left">
+      <div class="header">
+        <div class="eyebrow">CRM / GDP augmenté par IA</div>
+        <h1>Interface conversationnelle de pilotage</h1>
+        <p class="subtitle">Démo conceptuelle : le LLM devient la porte d’entrée pour lire, mettre à jour et enrichir Supabase, avec confirmation avant écriture.</p>
+      </div>
+
+      <div class="mode-switch">
+        <div class="mode active">Lecture / interrogation</div>
+        <div class="mode">Écriture contrôlée</div>
+      </div>
+
+      <div class="chat">
+        <div class="message user">
+          <div class="avatar">TJ</div>
+          <div class="bubble">
+            Donne-moi les priorités BizDev d’Imad pour cette semaine.
+          </div>
+        </div>
+
+        <div class="message ai">
+          <div class="avatar">AI</div>
+          <div class="bubble">
+            J’ai identifié 4 sujets prioritaires dans le CRM/GDP. Les éléments ci-dessous sont issus des opportunités et axes de chasse, sans ouvrir de données RH confidentielles.
+            <div class="tag-row">
+              <span class="tag green">Lecture Supabase</span>
+              <span class="tag">Opportunités</span>
+              <span class="tag orange">Actions dues</span>
+            </div>
+            <div class="card">
+              <div class="card-title">Priorités détectées</div>
+              <div class="rows">
+                <div class="row"><div class="label">1. RECORD2</div><div class="value">Clarifier les suites BizDev issues des contacts projet et prochains AO potentiels.</div></div>
+                <div class="row"><div class="label">2. Hub 1</div><div class="value">Identifier les signaux matières premières / circularité à transformer en pistes commerciales.</div></div>
+                <div class="row"><div class="label">3. AO</div><div class="value">Vérifier les opportunités B2X en cours et confirmer les prochaines échéances.</div></div>
+                <div class="row"><div class="label">4. Clients</div><div class="value">Réactiver les clients récents et partenaires avec potentiel de mission courte.</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="message user">
+          <div class="avatar">TJ</div>
+          <div class="bubble">
+            <strong>Entrée audio transcrite</strong>
+            <div class="audio-line"><span class="pulse"></span> J’ai eu un rendez-vous client aujourd’hui avec Decathlon. Tu peux passer l’opportunité en priorité haute. On doit soumettre une offre pour le 15 juin, environ 100 à 200 k€, pour un boost Explore 3 + KAOS.</div>
+          </div>
+        </div>
+
+        <div class="message ai">
+          <div class="avatar">AI</div>
+          <div class="bubble">
+            Je propose la mise à jour suivante. Aucune écriture ne sera faite avant confirmation.
+            <div class="tag-row">
+              <span class="tag red">Écriture CRM</span>
+              <span class="tag orange">Confirmation requise</span>
+            </div>
+            <div class="card">
+              <div class="card-title">Patch proposé dans Supabase</div>
+              <div class="rows">
+                <div class="row"><div class="label">Objet</div><div class="value">Opportunité BizDev : Decathlon</div></div>
+                <div class="row"><div class="label">Statut</div><div class="value">in_progress</div></div>
+                <div class="row"><div class="label">Priorité</div><div class="value">haute</div></div>
+                <div class="row"><div class="label">Montant</div><div class="value">100–200 k€ estimés</div></div>
+                <div class="row"><div class="label">Deadline</div><div class="value">15 juin</div></div>
+                <div class="row"><div class="label">Note</div><div class="value">Rendez-vous client réalisé ; offre à préparer autour de Explore 3 + KAOS.</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="confirm">
+        <div class="confirm-text">Mode démo : l’utilisateur confirme par “go” avant toute écriture dans la base.</div>
+        <button class="button">Confirmer le patch</button>
+      </div>
+    </section>
+
+    <section class="panel right">
+      <div class="dashboard-top">
+        <div class="dashboard-title">
+          <h2>Vue dashboard CRM/GDP</h2>
+          <p>Monitoring visuel : opportunités, projets, actions en retard, propriétaires, qualité de données.</p>
+        </div>
+        <div class="kpis">
+          <div class="kpi"><div class="num">102</div><div class="name">Opportunités</div></div>
+          <div class="kpi"><div class="num">18</div><div class="name">Projets</div></div>
+          <div class="kpi"><div class="num">48</div><div class="name">En cours</div></div>
+          <div class="kpi"><div class="num">96</div><div class="name">Sans contact</div></div>
+        </div>
+      </div>
+
+      <div class="dashboard-body">
+        <div class="static-dashboard">
+          <div class="metabase-shell">
+            <div class="metabase-header">
+              <h3>CRM / GDP MVP - Vue d'ensemble</h3>
+              <span>↧</span>
+            </div>
+            <div class="metabase-title">Draft Dashboard CRM / Gestion de projet STRAT 14/05/2026</div>
+
+            <div class="chart-grid">
+              <div class="mb-card">
+                <div class="mb-card-title">1. Opportunités ouvertes par statut</div>
+                <div class="bar-chart status-chart">
+                  <div class="axis-label y">opportunity_count</div>
+                  <div class="bar-wrap"><div class="vbar" style="height: 92%"></div><span>in_progress</span></div>
+                  <div class="bar-wrap"><div class="vbar" style="height: 78%"></div><span>signal</span></div>
+                  <div class="bar-wrap"><div class="vbar" style="height: 13%"></div><span>submitted</span></div>
+                  <div class="bar-wrap"><div class="vbar" style="height: 5%"></div><span>to_launch</span></div>
+                </div>
+              </div>
+
+              <div class="mb-card">
+                <div class="mb-card-title">2. Opportunités par owner</div>
+                <div class="owner-chart">
+                  <div class="owner-bar"><span>Celia Meunier</span><div><b style="height:92%"></b></div><em>23</em></div>
+                  <div class="owner-bar"><span>Thomas Judes</span><div><b style="height:80%"></b></div><em>20</em></div>
+                  <div class="owner-bar"><span>Pierre Cattoire</span><div><b style="height:68%"></b></div><em>17</em></div>
+                  <div class="owner-bar"><span>Chloé Lachaux</span><div><b style="height:32%"></b></div><em>8</em></div>
+                  <div class="owner-bar"><span>George</span><div><b style="height:32%"></b></div><em>8</em></div>
+                  <div class="owner-bar"><span>Sam Whittlesey</span><div><b style="height:24%"></b></div><em>6</em></div>
+                  <div class="owner-bar"><span>Imad Audi</span><div><b style="height:20%"></b></div><em>5</em></div>
+                  <div class="owner-bar"><span>Helena Suarez</span><div><b style="height:16%"></b></div><em>4</em></div>
+                  <div class="owner-bar"><span>Naelle Ouache</span><div><b style="height:16%"></b></div><em>4</em></div>
+                  <div class="owner-bar"><span>Marie Veys</span><div><b style="height:12%"></b></div><em>3</em></div>
+                  <div class="owner-bar"><span>Gabor Szendro</span><div><b style="height:8%"></b></div><em>2</em></div>
+                  <div class="owner-bar"><span>Adéola Jaiyeola</span><div><b style="height:4%"></b></div><em>1</em></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-card full">
+              <div class="mb-card-title">8. Axes BizDev par personne</div>
+              <table class="mb-table">
+                <thead><tr><th>team_member_name</th><th>title</th><th>responsibility_scope</th><th>linked_project_name</th><th>status</th><th>next_step</th><th>next_step_due_date</th></tr></thead>
+                <tbody>
+                  <tr><td>Chloé Lachaux</td><td>Activation du reseau Oree</td><td>transverse</td><td></td><td>active</td><td>Prioriser les groupes de travail et relations Oree a reactiver.</td><td></td></tr>
+                  <tr><td>Chloé Lachaux</td><td>BizDev lie a GreenEO</td><td>project_linked</td><td>GreenEO</td><td>active</td><td>Lister et qualifier les opportunites concretes issues de GreenEO.</td><td></td></tr>
+                  <tr><td>Chloé Lachaux</td><td>BizDev lie a HeriTACE</td><td>project_linked</td><td>HeriTACE</td><td>active</td><td>Lister et qualifier les opportunites concretes issues de HeriTACE.</td><td></td></tr>
+                  <tr><td>Chloé Lachaux</td><td>BizDev lie a RECORD2</td><td>project_linked</td><td>RECORD2</td><td>active</td><td>Lister et qualifier les opportunites concretes issues de RECORD2.</td><td></td></tr>
+                  <tr><td>Chloé Lachaux</td><td>Disponibilite et contribution AO</td><td>transverse</td><td></td><td>active</td><td>Clarifier les AO prioritaires ou Chloe doit contribuer.</td><td></td></tr>
+                </tbody>
+              </table>
+              <div class="table-footer">7 lignes</div>
+            </div>
+
+            <div class="mb-card full">
+              <div class="mb-card-title">Opportunités commerciales STRAT</div>
+              <table class="mb-table opps">
+                <thead><tr><th>title</th><th>organization_name</th><th>owner_name</th><th>status</th><th>priority</th><th>next_action</th><th>next_action_due_date</th></tr></thead>
+                <tbody>
+                  <tr><td>Groupe BEL</td><td>Groupe BEL</td><td>Pierre Cattoire</td><td>signal</td><td>normal</td><td>Clarifier la strategie d'approche et les contacts Claudine Bras / Sandrine</td><td>janvier 4, 2026</td></tr>
+                  <tr><td>Universite Bourgogne Franche-Comte - Exploratoire</td><td>Université Bourgogne Franche-Comté</td><td>Pierre Cattoire</td><td>in_progress</td><td>normal</td><td>Recaler un rendez-vous avec Manhattan Lebrun et Michel Chalot</td><td>janvier 4, 2026</td></tr>
+                  <tr><td>CCI Jura - Jean-Baptiste Guillerme</td><td>CCI Jura</td><td>Pierre Cattoire</td><td>in_progress</td><td>normal</td><td>Reprendre contact avec Jean-Baptiste Guillerme</td><td>janvier 6, 2026</td></tr>
+                  <tr><td>CCI Jura - bonnes pratiques commercants</td><td>CCI Jura</td><td>Celia Meunier</td><td>in_progress</td><td>low</td><td>Faire le suivi du RDV visio avec la CCI Jura</td><td>janvier 6, 2026</td></tr>
+                  <tr><td>Region AURA - Grenoble</td><td>Région AURA</td><td>Celia Meunier</td><td>signal</td><td>normal</td><td>Qualifier le financement potentiel et relancer le contact Grenoble</td><td>janvier 7, 2026</td></tr>
+                  <tr><td>Suez Consulting - Fatma Daou</td><td>Suez - Consulting</td><td>Celia Meunier</td><td>in_progress</td><td>normal</td><td>Qualifier la suite utile apres le warning ghost shopping</td><td>janvier 7, 2026</td></tr>
+                  <tr><td>BRGM - OFREMI</td><td>BRGM</td><td>Chloé Lachaux</td><td>signal</td><td>urgent</td><td>Documenter la perte et archiver le retour disponible</td><td>janvier 11, 2026</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="mb-card full">
+              <div class="mb-card-title">7. Projets actifs</div>
+              <table class="mb-table projects">
+                <thead><tr><th>name</th><th>project_family</th><th>owner_name</th><th>rm_team_member_name</th><th>next_milestone</th></tr></thead>
+                <tbody>
+                  <tr><td>AUTOLOOP</td><td>eu_project</td><td>Helena Suarez</td><td></td><td></td></tr>
+                  <tr><td>CAPA (Pre-leap climat)</td><td>eu_project</td><td>Sam Whittlesey</td><td>Sam Whittlesey</td><td></td></tr>
+                  <tr><td>CrossEU</td><td>eu_project</td><td>Thomas Judes</td><td></td><td></td></tr>
+                  <tr><td>ESFR SIMPLE</td><td>b2x_project</td><td>Imad Audi</td><td></td><td></td></tr>
+                  <tr><td>GreenEO</td><td>eu_project</td><td>Chloé Lachaux</td><td></td><td></td></tr>
+                  <tr><td>HeriTACE</td><td>eu_project</td><td>Chloé Lachaux</td><td></td><td></td></tr>
+                  <tr><td>LEAP-ENERGY +</td><td>eu_project</td><td>George</td><td></td><td></td></tr>
+                  <tr><td>NZC - SGA 3</td><td>eu_project</td><td>Khadija Mernissi</td><td></td><td></td></tr>
+                  <tr><td>NZC - SGA 4</td><td>eu_project</td><td>Celia Meunier</td><td></td><td></td></tr>
+                </tbody>
+              </table>
+              <div class="table-footer">16 lignes</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
